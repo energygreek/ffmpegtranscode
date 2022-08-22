@@ -1,0 +1,71 @@
+make --dry-run --keep-going --print-directory
+make: Entering directory '/home/jimery/testffmpeg/8-arm'
+cc  -Wall -g   -c -o transcode_amr.o transcode_amr.c
+cc -Wl,-rpath=/home/husongtao/.local/lib,--disable-new-dtags  transcode_amr.o    -lm -o transcode_amr
+make: Leaving directory '/home/jimery/testffmpeg/8-arm'
+ 
+Package libavdevice was not found in the pkg-config search path.
+Perhaps you should add the directory containing `libavdevice.pc'
+to the PKG_CONFIG_PATH environment variable
+No package 'libavdevice' found
+Package libavformat was not found in the pkg-config search path.
+Perhaps you should add the directory containing `libavformat.pc'
+to the PKG_CONFIG_PATH environment variable
+No package 'libavformat' found
+Package libavfilter was not found in the pkg-config search path.
+Perhaps you should add the directory containing `libavfilter.pc'
+to the PKG_CONFIG_PATH environment variable
+No package 'libavfilter' found
+Package libavcodec was not found in the pkg-config search path.
+Perhaps you should add the directory containing `libavcodec.pc'
+to the PKG_CONFIG_PATH environment variable
+No package 'libavcodec' found
+Package libswresample was not found in the pkg-config search path.
+Perhaps you should add the directory containing `libswresample.pc'
+to the PKG_CONFIG_PATH environment variable
+No package 'libswresample' found
+Package libswscale was not found in the pkg-config search path.
+Perhaps you should add the directory containing `libswscale.pc'
+to the PKG_CONFIG_PATH environment variable
+No package 'libswscale' found
+Package libavutil was not found in the pkg-config search path.
+Perhaps you should add the directory containing `libavutil.pc'
+to the PKG_CONFIG_PATH environment variable
+No package 'libavutil' found
+Package libpostproc was not found in the pkg-config search path.
+Perhaps you should add the directory containing `libpostproc.pc'
+to the PKG_CONFIG_PATH environment variable
+No package 'libpostproc' found
+Package libavdevice was not found in the pkg-config search path.
+Perhaps you should add the directory containing `libavdevice.pc'
+to the PKG_CONFIG_PATH environment variable
+No package 'libavdevice' found
+Package libavformat was not found in the pkg-config search path.
+Perhaps you should add the directory containing `libavformat.pc'
+to the PKG_CONFIG_PATH environment variable
+No package 'libavformat' found
+Package libavfilter was not found in the pkg-config search path.
+Perhaps you should add the directory containing `libavfilter.pc'
+to the PKG_CONFIG_PATH environment variable
+No package 'libavfilter' found
+Package libavcodec was not found in the pkg-config search path.
+Perhaps you should add the directory containing `libavcodec.pc'
+to the PKG_CONFIG_PATH environment variable
+No package 'libavcodec' found
+Package libswresample was not found in the pkg-config search path.
+Perhaps you should add the directory containing `libswresample.pc'
+to the PKG_CONFIG_PATH environment variable
+No package 'libswresample' found
+Package libswscale was not found in the pkg-config search path.
+Perhaps you should add the directory containing `libswscale.pc'
+to the PKG_CONFIG_PATH environment variable
+No package 'libswscale' found
+Package libavutil was not found in the pkg-config search path.
+Perhaps you should add the directory containing `libavutil.pc'
+to the PKG_CONFIG_PATH environment variable
+No package 'libavutil' found
+Package libpostproc was not found in the pkg-config search path.
+Perhaps you should add the directory containing `libpostproc.pc'
+to the PKG_CONFIG_PATH environment variable
+No package 'libpostproc' found
+

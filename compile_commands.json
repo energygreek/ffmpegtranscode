@@ -1,0 +1,16 @@
+[
+ {
+  "directory": "/home/jimery/testffmpeg/8-arm",
+  "arguments": [
+   "cc",
+   "-I/home/jimery/.local/include",
+   "-Wall",
+   "-g",
+   "-c",
+   "-o",
+   "transcoding.o",
+   "transcoding.c"
+  ],
+  "file": "transcoding.c"
+ }
+]
