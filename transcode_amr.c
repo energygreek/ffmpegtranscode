@@ -34,18 +34,17 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "libavcodec/avcodec.h"
+#include "libavcodec/codec.h"
 #include "libavformat/avformat.h"
 #include "libavformat/avio.h"
-
-#include "libavcodec/avcodec.h"
-
 #include "libavutil/audio_fifo.h"
 #include "libavutil/avassert.h"
 #include "libavutil/avstring.h"
 #include "libavutil/channel_layout.h"
+#include "libavutil/dict.h"
 #include "libavutil/frame.h"
 #include "libavutil/opt.h"
-
 #include "libswresample/swresample.h"
 
 static void usage(void) {
@@ -188,7 +187,6 @@ static int open_output_file(const char *filename,
                             const AVCodec *output_codec, int sample_rate,
                             int bit_rate) {
   AVCodecContext *avctx = NULL;
-  AVIOContext *output_io_context = NULL;
   AVStream *stream = NULL;
   int error;
 
@@ -205,13 +203,13 @@ static int open_output_file(const char *filename,
   }
 
   /* Open the output file to write to it. */
-  if ((error = avio_open(&output_io_context, filename, AVIO_FLAG_WRITE)) < 0) {
+  /* Associate the output file (pointer) with the container format context. */
+  if ((error = avio_open(&(*output_format_context)->pb, filename,
+                         AVIO_FLAG_WRITE)) < 0) {
     fprintf(stderr, "Could not open output file '%s' (error '%s')\n", filename,
             av_err2str(error));
     return error;
   }
-  /* Associate the output file (pointer) with the container format context. */
-  (*output_format_context)->pb = output_io_context;
 
   /* Create a new audio stream in the output file container. */
   if (!(stream = avformat_new_stream(*output_format_context, NULL))) {
@@ -229,16 +227,21 @@ static int open_output_file(const char *filename,
 
   /* Set the basic encoder parameters.
    * The input file's sample rate is used to avoid a sample rate conversion. */
-  avctx->channels = input_codec_context->channels;
-  avctx->channel_layout = input_codec_context->channel_layout;
+  avctx->ch_layout.nb_channels = input_codec_context->ch_layout.nb_channels;
+  avctx->ch_layout = input_codec_context->ch_layout;
+  //   avctx->channel_layout =
+  //   av_get_default_channel_layout(input_codec_context->channels);
   avctx->sample_rate = input_codec_context->sample_rate;
-  avctx->sample_fmt = output_codec->sample_fmts[0];
-  avctx->bit_rate = bit_rate ? bit_rate : input_codec_context->bit_rate;
+  // sample_rate ? sample_rate : input_codec_context->sample_rate;
+  avctx->bit_rate = input_codec_context->bit_rate;
 
+  avctx->sample_fmt = output_codec->sample_fmts[0];
   /* Allow the use of the experimental AAC encoder. */
   avctx->strict_std_compliance = FF_COMPLIANCE_EXPERIMENTAL;
 
   /* Set the sample rate for the container. */
+  // stream->time_base.den = input_codec_context->sample_rate;
+  // stream->time_base.den = avctx->sample_rate;
   stream->time_base.den = input_codec_context->sample_rate;
   stream->time_base.num = 1;
 
@@ -256,7 +259,8 @@ static int open_output_file(const char *filename,
 
   // manual set frame size for pcm
   if (output_codec->id == AV_CODEC_ID_PCM_ALAW ||
-      output_codec->id == AV_CODEC_ID_PCM_MULAW) {
+      output_codec->id == AV_CODEC_ID_PCM_MULAW ||
+      output_codec->id == AV_CODEC_ID_PCM_S16BE) {
     avctx->frame_size = 160;
   }
 
@@ -325,13 +329,14 @@ static int init_resampler(AVCodecContext *input_codec_context,
    * are assumed for simplicity (they are sometimes not detected
    * properly by the demuxer and/or decoder).
    */
-  *resample_context = swr_alloc_set_opts(
-      NULL, av_get_default_channel_layout(output_codec_context->channels),
+  error = swr_alloc_set_opts2(
+      resample_context, &output_codec_context->ch_layout,
       output_codec_context->sample_fmt, output_codec_context->sample_rate,
-      av_get_default_channel_layout(input_codec_context->channels),
+      &input_codec_context->ch_layout,
       input_codec_context->sample_fmt, input_codec_context->sample_rate, 0,
       NULL);
-  if (!*resample_context) {
+      
+  if (error != 0 || !*resample_context) {
     fprintf(stderr, "Could not allocate resample context\n");
     return AVERROR(ENOMEM);
   }
@@ -803,6 +808,7 @@ static int write_output_file_trailer(AVFormatContext *output_format_context) {
 }
 
 int main(int argc, char **argv) {
+
   AVFormatContext *input_format_context = NULL, *output_format_context = NULL;
   AVCodecContext *input_codec_context = NULL, *output_codec_context = NULL;
   SwrContext *resample_context = NULL;
@@ -834,6 +840,12 @@ int main(int argc, char **argv) {
       usage();
       exit(EXIT_FAILURE);
     }
+  }
+
+  if (argc - optind != 4) {
+    fprintf(stderr, "missing required argument");
+    usage();
+    exit(EXIT_FAILURE);
   }
 
   const char *input_url_arg = argv[optind];
@@ -871,6 +883,7 @@ int main(int argc, char **argv) {
   if (verbose) {
     av_dump_format(input_format_context, 0, input_url_arg, 0);
   }
+
   /* Open the output file for writing. */
   if (open_output_file(output_url_arg, input_codec_context,
                        &output_format_context, &output_codec_context, codec,
@@ -921,13 +934,12 @@ int main(int argc, char **argv) {
      * At the end of the file, we pass the remaining samples to
      * the encoder. */
     while (av_audio_fifo_size(fifo) >= output_frame_size ||
-           (finished && av_audio_fifo_size(fifo) > 0)) {
+           (finished && av_audio_fifo_size(fifo) > 0))
       /* Take one frame worth of audio samples from the FIFO buffer,
        * encode it and write it to the output file. */
       if (load_encode_and_write(fifo, output_format_context,
                                 output_codec_context))
         goto cleanup;
-    }
 
     /* If we are at the end of the input file and have encoded
      * all remaining samples, we can exit this loop and finish. */

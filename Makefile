@@ -15,7 +15,7 @@ CFLAGS := $(shell pkg-config --cflags $(FFMPEG_LIBS)) $(CFLAGS)
 LDLIBS := $(shell pkg-config --libs $(FFMPEG_LIBS)) $(LDLIBS) -lm
 LDFLAGS := -Wl,-rpath=/home/husongtao/.local/lib,--disable-new-dtags
 
-EXAMPLES=  transcoding transcode_amr
+EXAMPLES=  transcoding transcode_amr  transcode_amr_swresample
 
 OBJS=$(addsuffix .o,$(EXAMPLES))
 
